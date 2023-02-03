@@ -1,0 +1,9 @@
+h1 Welcome to my Pokemon Website
+- if session[:logged_in] != true 
+    div 
+        a href="/login" Login
+        a href="/signup" Signup
+- else 
+    div 
+        h2 display wild pokemons here
+        a href="/logout" Logout
