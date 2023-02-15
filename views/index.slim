@@ -5,5 +5,19 @@ h1 Welcome to my Pokemon Website
         a href="/signup" Signup
 - else 
     div 
-        h2 display wild pokemons here
+        p = @pokemon
+        - pokemon_name = @pokemon["name"]
+        - case @pokemon["name"]
+            - when "Mr. Mime"
+                - pokemon_name = "mr-mime"
+            - when "Nidoran♂"
+                - pokemon_name = "nidoran-m"
+            - when "Nidoran♀"
+                - pokemon_name = "nidoran-f"
+            - when "Farfetch'd"
+                - pokemon_name = "farfetchd"
+        - if rand(0..10) != 0 
+            img.img_size src='https://img.pokemondb.net/sprites/sword-shield/icon/#{pokemon_name.downcase}.png'
+        - else 
+            img.img_size src='https://img.pokemondb.net/sprites/x-y/shiny/#{pokemon_name.downcase}.png'
         a href="/logout" Logout

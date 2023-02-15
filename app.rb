@@ -10,6 +10,10 @@ db = SQLite3::Database.new('db/database.db')
 db.results_as_hash = true
 
 get '/' do
+    if session[:logged_in]
+        random_number = rand(1..151)
+        @pokemon = db.execute('SELECT * FROM pokemons WHERE id=?', random_number).first
+    end
     slim(:index)
 end
 
@@ -47,7 +51,6 @@ post '/login' do
     password = params[:password]
     row = db.execute("SELECT password FROM users WHERE username=?", username).first
     password_digest = row["password"]
-    p password_digest
 
     if BCrypt::Password.new(password_digest) == password
         flash[:notice] = "Successful login"
