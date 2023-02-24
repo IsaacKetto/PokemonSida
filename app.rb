@@ -4,6 +4,7 @@ require 'SQLite3'
 require 'bcrypt'
 require 'slim'
 require 'sinatra/flash'
+require_relative 'lib/module'
 
 enable :sessions
 db = SQLite3::Database.new('db/database.db')
@@ -15,6 +16,11 @@ get '/' do
         @pokemon = db.execute('SELECT * FROM pokemons WHERE id=?', random_number).first
     end
     slim(:index)
+end
+
+get '/pokemon' do
+    @pokemons = db.execute('SELECT * FROM pokemons')
+    slim(:"pokemon/index")
 end
 
 get '/signup' do

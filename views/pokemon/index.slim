@@ -1,0 +1,9 @@
+h1 List of all Pokémons 
+div.list_grid
+    - @pokemons.each do |pokemon|
+        a href='/pokemon/#{pokemon["id"]}'
+            div.display_box
+                - pokemon_name = pokemon["name"]
+                h2 = pokemon_name
+                - pokemon_name = special_name(pokemon_name)
+                img.img_size src='https://img.pokemondb.net/sprites/sword-shield/icon/#{pokemon_name.downcase}.png'

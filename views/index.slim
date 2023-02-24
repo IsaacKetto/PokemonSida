@@ -7,15 +7,7 @@ h1 Welcome to my Pokemon Website
     div 
         p = @pokemon
         - pokemon_name = @pokemon["name"]
-        - case @pokemon["name"]
-            - when "Mr. Mime"
-                - pokemon_name = "mr-mime"
-            - when "Nidoran♂"
-                - pokemon_name = "nidoran-m"
-            - when "Nidoran♀"
-                - pokemon_name = "nidoran-f"
-            - when "Farfetch'd"
-                - pokemon_name = "farfetchd"
+        - pokemon_name = special_name(pokemon_name)
         - if rand(0..10) != 0 
             img.img_size src='https://img.pokemondb.net/sprites/sword-shield/icon/#{pokemon_name.downcase}.png'
         - else 
