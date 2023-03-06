@@ -5,9 +5,14 @@ html lang="en"
         meta http-equiv="X-UA-Compatible" content="IE=edge"/
         meta name="viewport" content="width=device-width, initial-scale=1.0"/
         link rel="stylesheet" href="/css/style.css"/
-        title Document 
+        title Pokemon Sida 
     body 
         - if flash[:notice]
             p.notice = flash[:notice]
+        div.flex_row
+            - if session[:logged_in] == true
+                a.button href="/" Home 
+                a.button href="/pokemon" List of Pokemons 
+                a.button href="/logout" Logout
         ==yield
         script src="/js/main.js" 

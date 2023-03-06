@@ -1,8 +1,8 @@
 h1 Welcome to my Pokemon Website
 - if session[:logged_in] != true 
-    div 
-        a href="/login" Login
-        a href="/signup" Signup
+    div.flex_row 
+        a.button href="/login" Login
+        a.button href="/signup" Signup
 - else 
     div 
         p = @pokemon
@@ -12,4 +12,3 @@ h1 Welcome to my Pokemon Website
             img.img_size src='https://img.pokemondb.net/sprites/sword-shield/icon/#{pokemon_name.downcase}.png'
         - else 
             img.img_size src='https://img.pokemondb.net/sprites/x-y/shiny/#{pokemon_name.downcase}.png'
-        a href="/logout" Logout

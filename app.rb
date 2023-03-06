@@ -23,6 +23,11 @@ get '/pokemon' do
     slim(:"pokemon/index")
 end
 
+get '/pokemon/:id' do
+    @pokemon = pokemon_data(db, params[:id]).first
+    slim(:"pokemon/show")
+end
+
 get '/signup' do
     slim(:signup)
 end

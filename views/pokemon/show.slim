@@ -1,0 +1,12 @@
+h1 = @pokemon["name"]
+- pokemon_name = special_name(@pokemon["name"])
+- color_1 = type_color(@pokemon["type_1"].downcase)
+img.img_size src='https://img.pokemondb.net/sprites/sword-shield/icon/#{pokemon_name.downcase}.png'
+h2.bold Types
+div.flex_row
+    p.type_box style="background: #{color_1}" = @pokemon["type_1"]
+    - if @pokemon["type_2"] != nil
+        - color_2 = type_color(@pokemon["type_2"].downcase)
+        p.type_box style="background: #{color_2}" = @pokemon["type_2"]
+- if @pokemon["is_legendary"] == 1
+    h1.legendary_text LEGENDARY
