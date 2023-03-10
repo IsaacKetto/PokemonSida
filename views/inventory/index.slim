@@ -1,0 +1,9 @@
+h1.center Pokémon Box 
+div.list_grid
+    - @pokemons.each do |pokemon|
+        a href='/pokemon/#{pokemon["id"]}'
+            div.display_box
+                - pokemon_name = pokemon["name"]
+                h2.white = pokemon_name
+                - pokemon_name = special_name(pokemon_name)
+                img.img_size src='https://img.pokemondb.net/sprites/sword-shield/icon/#{pokemon_name.downcase}.png'

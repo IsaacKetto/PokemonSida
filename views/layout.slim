@@ -13,6 +13,7 @@ html lang="en"
             - if session[:logged_in] == true
                 a.button href="/" Home 
                 a.button href="/pokemon" List of Pokemons 
+                a.button href="/inventory" Your inventory   
                 a.button href="/logout" Logout
         ==yield
         script src="/js/main.js" 
