@@ -1,15 +1,14 @@
-- if @filter
-    h1.center List of all #{@filter} Pokémons 
-- else
+- if @filter == "all" || !@filter
     h1.center List of all Pokémons 
-form action="/pokemon/type" method="post"
+- elsif @filter && @filter != "all"
+    h1.center List of all #{@filter} Pokémons 
+form.flex_row action="/pokemon/type" method="post"
     select name="type"
         option value="all" selected = "selected" All
         - @type_colors.keys.each do |types|
-            option value="#{types}" #{types}
-        input type="submit" value="Filter!"
+            option value="#{types}" #{types.capitalize}
+        input.button type="submit" value="Filter!"
             
-
 div.list_grid
     - @pokemons.each do |pokemon|
         a href='/pokemon/#{pokemon["id"]}'

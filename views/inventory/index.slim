@@ -1,9 +1,18 @@
 h1.center Pokémon Box 
+a.button href="/team" Your Pokémon Teams
 div.list_grid
+    - used_data = []
     - @pokemons.each do |pokemon|
+        - pokemon = pokemon.first
         a href='/pokemon/#{pokemon["id"]}'
             div.display_box
                 - pokemon_name = pokemon["name"]
                 h2.white = pokemon_name
                 - pokemon_name = special_name(pokemon_name)
                 img.img_size src='https://img.pokemondb.net/sprites/sword-shield/icon/#{pokemon_name.downcase}.png'
+                - for data in @relation_data
+                    - if data["pokemon_id"] == pokemon["id"] && !used_data.include?(data["id"])
+                        form action="/pokemon/#{data["id"]}/delete" method="post" 
+                            input.button style="background: red" type="submit" value="Release"
+                        - used_data.append(data["id"])
+                        - break

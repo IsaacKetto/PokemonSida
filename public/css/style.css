@@ -60,21 +60,43 @@ a:link{
     gap: 5px;
 }
 
+.flex_column{
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: column;
+    max-width: fit-content;
+    gap: 5px;
+}
+
 .center{
     text-align: center;
+}  
+
+input[type="submit" i] {
+    cursor: pointer;
 }
 
 .button{
-    color: white;
     display: flex;
-    align-content: center;
-    border-radius: 0.5rem;
-    flex-wrap: wrap;
-    padding: 0,2rem;
     max-width: fit-content;
-    background: gray;
+    flex-wrap: wrap;
+    align-content: center;
+    appearance: auto;
+    user-select: none;
+    align-items: flex-start;
+    text-align: center;
+    box-sizing: border-box;
+    background: rgb(81, 81, 81);
+    border-radius: 0.5rem;
+    color: white;
     padding: 0.2rem;
-    text-decoration: none;
+    border-style: outset;
+    border-color: buttonborder;
+    border-image: initial;
+}
+
+.button:hover{
+    background: rgb(50,50,50);
 }
 
 .legendary_text{

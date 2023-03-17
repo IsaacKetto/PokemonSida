@@ -29,7 +29,13 @@ post '/catch' do
 end
 
 get '/inventory' do
-    @pokemons = db.execute('SELECT * FROM pokemons WHERE id IN (SELECT pokemon_id FROM user_pokemon_relation WHERE user_id = ?)', session[:current_user][:user_id])
+    @pokemons = []
+    pokemon_ids = db.execute('SELECT pokemon_id FROM user_pokemon_relation WHERE user_id=?', session[:current_user][:user_id])
+    pokemon_ids.each do |pokemon_id|
+       @pokemons.append(db.execute('SELECT * FROM pokemons WHERE id=?', pokemon_id["pokemon_id"].to_i)) 
+    end
+    @relation_data = db.execute('SELECT pokemon_id, id FROM user_pokemon_relation WHERE user_id=?', session[:current_user][:user_id])
+    p @relation_data
     slim(:"inventory/index")
 end
 
@@ -90,6 +96,11 @@ post '/login' do
         flash[:notice] = "Incorrect password or username!"
         redirect('/login')
     end
+end
+
+post '/pokemon/:id/delete' do
+    db.execute('DELETE FROM user_pokemon_relation WHERE id=?', params[:id])
+    redirect('/inventory')
 end
 
 post '/pokemon/type' do

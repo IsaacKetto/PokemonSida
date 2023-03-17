@@ -21,6 +21,10 @@ def pokemon_data(db, id)
     return db.execute('SELECT * FROM pokemons WHERE id=?', id)
 end
 
+def admin_check(user_id, db)
+    return 1 == db.execute('SELECT permission FROM users WHERE user_id=?', user_id)
+end
+
 TypeColours = {
     normal: "#aa9",
     fire: "#FF4422",

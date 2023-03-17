@@ -12,5 +12,7 @@ h1 Welcome to my Pokemon Website
             img.img_size src='https://img.pokemondb.net/sprites/sword-shield/icon/#{pokemon_name.downcase}.png'
         - else 
             img.img_size src='https://img.pokemondb.net/sprites/x-y/shiny/#{pokemon_name.downcase}.png'
-        form action="/catch" method="post" 
-            input.button type="submit" value="Catch!"
+        div.flex_row
+            form action="/catch" method="post" 
+                input.button type="submit" value="Catch!"
+            a.button href="/" Run!
