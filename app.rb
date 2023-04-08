@@ -30,13 +30,26 @@ end
 
 get '/inventory' do
     @pokemons = []
-    pokemon_ids = db.execute('SELECT pokemon_id FROM user_pokemon_relation WHERE user_id=?', session[:current_user][:user_id])
+    pokemon_ids = db.execute('SELECT pokemon_id, id FROM user_pokemon_relation INNER JOIN users ON user_pokemon_relation.user_id = users.user_id AND user_pokemon_relation.user_id=?', session[:current_user][:user_id])
     pokemon_ids.each do |pokemon_id|
        @pokemons.append(db.execute('SELECT * FROM pokemons WHERE id=?', pokemon_id["pokemon_id"].to_i)) 
     end
     @relation_data = db.execute('SELECT pokemon_id, id FROM user_pokemon_relation WHERE user_id=?', session[:current_user][:user_id])
-    p @relation_data
     slim(:"inventory/index")
+end
+
+get '/team' do
+    @teams = db.execute('SELECT pokemon_id, id, team_id FROM user_team_relation INNER JOIN users ON user_team_relation.user_id = users.user_id AND users.user_id=?', session[:current_user][:user_id])
+    slim(:"team/index")
+end
+
+get '/team/new' do
+    @your_pokemons = []
+    pokemon_ids = db.execute('SELECT pokemon_id, id FROM user_pokemon_relation INNER JOIN users ON user_pokemon_relation.user_id = users.user_id AND user_pokemon_relation.user_id=?', session[:current_user][:user_id])
+    pokemon_ids.each do |pokemon_id|
+       @your_pokemons.append(db.execute('SELECT * FROM pokemons WHERE id=?', pokemon_id["pokemon_id"].to_i)) 
+    end
+    slim(:"team/new")
 end
 
 get '/pokemon' do
