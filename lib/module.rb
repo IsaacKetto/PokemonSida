@@ -13,16 +13,58 @@ def special_name(name)
     return pokemon_name
 end
 
-def catch_pokemon(user_id, pokemon_id, db)
-    db.execute('INSERT INTO user_pokemon_relation (user_id, pokemon_id) VALUES (?, ?)', user_id, pokemon_id)
+def catch_pokemon(user_id, pokemon_id)
+    $db.execute('INSERT INTO user_pokemon_relation (user_id, pokemon_id) VALUES (?, ?)', user_id, pokemon_id)
 end
 
-def pokemon_data(db, id)
-    return db.execute('SELECT * FROM pokemons WHERE id=?', id)
+def logout()
+    session.delete(:current_user)
+    session[:logged_in] = false
+    flash[:notice] = "You have been logged out!"
 end
 
-def admin_check(user_id, db)
-    return 1 == db.execute('SELECT permission FROM users WHERE user_id=?', user_id)
+def login(username)
+    flash[:notice] = "Successful login"
+    session[:logged_in] = true
+    session[:current_user] = {
+        username: username, 
+        user_id: $db.execute('SELECT user_id FROM users WHERE username=? LIMIT 1', username).first["user_id"]
+    }
+end
+
+def create_team(pokemons, team_name)
+    $db.execute('INSERT INTO user_team_relation (user_id, pokemons, team_name) VALUES (?,?,?)', session[:current_user][:user_id], pokemons, team_name)
+end
+
+def signup(username, password)
+    password_digest = BCrypt::Password.create(password)
+    $db.execute("INSERT INTO users (username, password) VALUES (?,?)", username, password_digest)
+end
+
+def fetch_inventory(user)
+    pokemons = []
+    pokemon_ids = $db.execute('SELECT pokemon_id, id FROM user_pokemon_relation INNER JOIN users ON user_pokemon_relation.user_id = users.user_id AND user_pokemon_relation.user_id=?', user[:user_id])
+    pokemon_ids.each do |pokemon_id|
+       pokemons.append($db.execute('SELECT * FROM pokemons WHERE id=?', pokemon_id["pokemon_id"].to_i)) 
+    end
+    relation_data = $db.execute('SELECT pokemon_id, id FROM user_pokemon_relation WHERE user_id=?', user[:user_id])
+    return pokemons, relation_data
+end
+
+def fetch_teams(user)
+    $db.execute('SELECT pokemons, team_name, team_id FROM user_team_relation INNER JOIN users ON user_team_relation.user_id = users.user_id AND users.user_id=?', user[:user_id])
+end
+
+def pokemon_data(id)
+    return $db.execute('SELECT * FROM pokemons WHERE id=?', id)
+end
+
+def admin_check(user_id)
+    return 1 == $db.execute('SELECT permission FROM users WHERE user_id=?', user_id)
+end
+
+def logged_in?()
+    return session[:logged_in] == true
 end
 
 TypeColours = {

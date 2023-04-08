@@ -1,0 +1,21 @@
+form.flex_column action="/team" method="post" 
+    label for="team_name" Team name:
+    input type="text" name="team_name" id="team_name"
+    label for="list" Select Pokemons: 
+    select name="pokemons[]" id="list" multiple="multiple"
+        - @your_pokemons.flatten.each do |pokemon|
+            option value="#{pokemon}" #{pokemon["name"].capitalize}
+    input.button type="submit" value="Create Team!"
+
+<script>
+const select = document.getElementById('list');
+
+select.addEventListener('change', (event) => {
+  const selectedOptions = select.selectedOptions;
+  
+  if (selectedOptions.length > 6) {
+    // Unselect the last option
+    selectedOptions[selectedOptions.length - 1].selected = false;
+  }
+});
+</script>
