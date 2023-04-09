@@ -17,5 +17,13 @@ html lang="en"
                 a.button href="/" Home 
                 a.button href="/pokemon" List of Pokemons 
                 a.button href="/inventory" Your inventory   
+                a.button href="/showcase" Team Showcase
                 a.button href="/logout" Logout
+            - elsif session[:logged_in] != true
+                a.button href="/pokemon" List of Pokemons
+                a.button href="/showcase" Team Showcase
+            - if session[:current_user]
+                - if admin_check(session[:current_user][:user_id]) == true
+                    a.button href="/admin/users" All users
+                    a.button href="/admin/teams" All teams
         ==yield

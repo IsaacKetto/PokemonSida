@@ -15,6 +15,23 @@
     align-content: space-around;
 }
 
+.team_header{
+    color: white;
+    text-align: center;
+    align-content: center;
+}
+
+.display_team_box{
+    color: white;
+    padding: 0.5rem;
+    background-color: gray;
+    border-radius: 1rem;
+    text-align: center;
+    width: 19rem;
+    height: max-content;
+    margin-bottom: 1rem;
+}
+
 .display_box{
     padding: 0.5rem;
     background-color: gray;

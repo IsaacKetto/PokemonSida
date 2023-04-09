@@ -11,11 +11,18 @@ enable :sessions
 $js_functions = ExecJS.compile(File.read('public/js/main.js'))
 $db = SQLite3::Database.new('db/database.db')
 $db.results_as_hash = true
-guest_routes = ["/", "/login", "/signup", "/pokemon"] 
+guest_routes = ["/", "/login", "/signup", "/pokemon", "/showcase"] 
+admin_routes = ["/admin/users", "/admin/teams"]
 
 before do
     @type_colors = TypeColours
-    if session[:logged_in] != true && !guest_routes.include?(request.path_info)
+    if session[:logged_in] != true && !guest_routes.include?(request.path_info) && !request.path_info.match?(/^\/pokemon\/\d+$/)
+        redirect('/')
+    end
+
+    if admin_routes.include?(request.path_info) && !admin_check(session[:current_user][:user_id])
+        p admin_check(session[:current_user][:user_id])
+        flash[:notice] = "You have no permission to enter that side"
         redirect('/')
     end
 end
@@ -42,6 +49,55 @@ end
 get '/team' do
     @teams = fetch_teams(session[:current_user])
     slim(:"team/index")
+end
+
+get '/admin/users' do
+    if admin_check(session[:current_user][:user_id])
+        @users = $db.execute('SELECT * FROM users')
+        slim(:"admin/users/index")
+    end
+end
+
+get '/admin/teams' do
+    if admin_check(session[:current_user][:user_id])
+        @teams = $db.execute('SELECT * FROM user_team_relation')
+        slim(:"admin/teams/index")
+    end
+end
+
+get '/admin/teams/:id/edit' do
+    if admin_check(session[:current_user][:user_id])
+        @your_pokemons, @relation_data = fetch_inventory(params[:id])
+        @team_id = params[:id]
+        slim(:"admin/teams/edit")
+    end   
+end
+
+post '/admin/teams/:id/update' do
+    if admin_check(session[:current_user][:user_id])
+        fixed_array = $js_functions.call("fixArray", params[:pokemons])
+        selected_pokemons = $js_functions.call("addQuotesToArray", fixed_array)
+        update_team(params["team_name"], selected_pokemons, params[:id])
+    end
+    redirect('/admin/teams')
+end
+
+get '/team/:id/edit' do
+    @your_pokemons, @relation_data = fetch_inventory(session[:current_user][:user_id])
+    @team_id = params[:id]
+    slim(:"/team/edit")
+end
+
+get '/showcase' do
+    @teams = $db.execute('SELECT * FROM user_team_relation')
+    slim(:showcase)
+end
+
+post '/team/:id/update' do
+    fixed_array = $js_functions.call("fixArray", params[:pokemons])
+    selected_pokemons = $js_functions.call("addQuotesToArray", fixed_array)
+    update_team(params["team_name"], selected_pokemons, params[:id])
+    redirect("/team")
 end
 
 get '/team/new' do
@@ -72,8 +128,36 @@ get '/logout' do
     redirect('/')
 end
 
+post '/admin/users/:id/update' do
+    if admin_check(session[:current_user][:user_id])
+        update_user(params["username"], params[:id])
+    end
+    redirect(:'/admin/users')
+end
+
+post '/admin/users/:id/delete' do
+    if admin_check(params[:id])
+        flash[:notice] = "You cannot delete the Admin user"
+    end
+
+    if !admin_check(params[:id]) && admin_check(session[:current_user][:user_id])
+        delete_user(params[:id])
+    end
+
+    redirect(:"admin/users")
+end
+
+post '/delete_user' do
+    if admin_check(session[:current_user][:user_id])
+        flash[:notice] = "You cannot delete the Admin user"
+    else
+        delete_user(session[:current_user][:user_id])
+    end
+end
+
 post '/team' do
-    selected_pokemons = $js_functions.call("addQuotesToArray", params[:pokemons])
+    fixed_array = $js_functions.call("fixArray", params[:pokemons])
+    selected_pokemons = $js_functions.call("addQuotesToArray", fixed_array)
     create_team(selected_pokemons, params["team_name"])
     redirect(:"/team")
 end

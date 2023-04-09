@@ -8,6 +8,27 @@ function maxAllowedMultiselect(obj, maxAllowedCount) {
   }
 
 function addQuotesToArray(array) {
-    const strArray = JSON.stringify(array);
-    return strArray.replace(/\[/g, "\"[").replace(/\]/g, "]\"");
+  let pokemons = array
+  const strArray = JSON.stringify(pokemons)
+  return strArray
+}
+
+function parsePokemonArray(jsonStrings) {
+  const jsonFixed = jsonStrings.map(str => str.replace(/=>/g, ':'));
+  const pokemons = jsonFixed.map(str => JSON.parse(str));
+  return pokemons;
+}
+
+function fixArray(arr) {
+  const fixedArr = arr.map(str => {
+    const replaced = str.replace(/=>/g, ':').replace(/nil/g, 'null');
+    return JSON.parse(replaced);
+  });
+  return fixedArr;
+}
+
+function removeQuotesFromArray(array) {
+  const jsonString = array
+  const pokemonArray = JSON.parse(jsonString);
+  return pokemonArray
 }

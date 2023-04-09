@@ -1,0 +1,8 @@
+form.flex_column action="/admin/teams/#{@team_id}/update" method="post" 
+    label for="team_name" Change Team name:
+    input type="text" name="team_name" id="team_name"
+    label for="list" Change Pokemons (Reselect those that you do not want to change or select every pokemon that was there before!): 
+    select name="pokemons[]" id="list" multiple="multiple" onchange="maxAllowedMultiselect(this, 6)"
+        - @your_pokemons.flatten.each do |pokemon|
+            option value="#{pokemon}" #{pokemon["name"].capitalize}   
+    input.button type="submit" value="Edit Team!"

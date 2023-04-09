@@ -1,0 +1,12 @@
+h1 All users 
+- @users.each do |user|
+    div.display_box
+        h3.white = user["username"]
+        h3.white = user["user_id"]
+        form.flex_column action="/admin/users/#{user['user_id']}/update" method="post"
+            label for="username" Change users name: 
+            input type="text" name="username" id="username"
+            input type="submit" value="CHANGE!"
+        form.button action="/admin/users/#{user['user_id']}/delete" method="post"
+            input type="submit" value="DELETE USER!"/
+        

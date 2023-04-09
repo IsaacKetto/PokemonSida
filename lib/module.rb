@@ -23,6 +23,20 @@ def logout()
     flash[:notice] = "You have been logged out!"
 end
 
+def delete_user(user_id)
+    $db.execute('DELETE FROM users WHERE user_id=?', user_id)
+    $db.execute('DELETE FROM user_pokemon_relation WHERE user_id=?', user_id)
+    $db.execute('DELETE FROM user_team_relation WHERE user_id=?', user_id)
+    if user_id == session[:current_user][:user_id]
+        session[:logged_in] = false
+        session[:current_user] = {}
+    end
+end
+
+def update_user(new_name, id)
+    $db.execute("UPDATE users SET username=? WHERE user_id=?", new_name, id)
+end
+
 def login(username)
     flash[:notice] = "Successful login"
     session[:logged_in] = true
@@ -41,13 +55,21 @@ def signup(username, password)
     $db.execute("INSERT INTO users (username, password) VALUES (?,?)", username, password_digest)
 end
 
-def fetch_inventory(user)
+def update_team(new_name, pokemon_list, team_id) 
+    if new_name == ""
+        $db.execute('UPDATE user_team_relation SET pokemons=? WHERE team_id=?', pokemon_list, team_id)
+    else
+        $db.execute('UPDATE user_team_relation SET pokemons=?, team_name=? WHERE team_id=?', pokemon_list, new_name, team_id)
+    end
+end
+
+def fetch_inventory(user_id)
     pokemons = []
-    pokemon_ids = $db.execute('SELECT pokemon_id, id FROM user_pokemon_relation INNER JOIN users ON user_pokemon_relation.user_id = users.user_id AND user_pokemon_relation.user_id=?', user[:user_id])
+    pokemon_ids = $db.execute('SELECT pokemon_id, id FROM user_pokemon_relation INNER JOIN users ON user_pokemon_relation.user_id = users.user_id AND user_pokemon_relation.user_id=?', user_id)
     pokemon_ids.each do |pokemon_id|
        pokemons.append($db.execute('SELECT * FROM pokemons WHERE id=?', pokemon_id["pokemon_id"].to_i)) 
     end
-    relation_data = $db.execute('SELECT pokemon_id, id FROM user_pokemon_relation WHERE user_id=?', user[:user_id])
+    relation_data = $db.execute('SELECT pokemon_id, id FROM user_pokemon_relation WHERE user_id=?', user_id)
     return pokemons, relation_data
 end
 
@@ -60,7 +82,7 @@ def pokemon_data(id)
 end
 
 def admin_check(user_id)
-    return 1 == $db.execute('SELECT permission FROM users WHERE user_id=?', user_id)
+    return 1 == $db.execute('SELECT permission FROM users WHERE user_id=?', user_id).first["permission"]
 end
 
 def logged_in?()
