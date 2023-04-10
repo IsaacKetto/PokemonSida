@@ -63,6 +63,10 @@ def update_team(new_name, pokemon_list, team_id)
     end
 end
 
+def delete_team(team_id)
+    $db.execute('DELETE FROM user_team_relation WHERE team_id=?', team_id)
+end
+
 def fetch_inventory(user_id)
     pokemons = []
     pokemon_ids = $db.execute('SELECT pokemon_id, id FROM user_pokemon_relation INNER JOIN users ON user_pokemon_relation.user_id = users.user_id AND user_pokemon_relation.user_id=?', user_id)

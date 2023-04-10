@@ -15,5 +15,5 @@ div.list_grid
                         h3 = pokemon["name"]
                         img.img_size src='https://img.pokemondb.net/sprites/sword-shield/icon/#{pokemon_name.downcase}.png'
             a.button href="teams/#{team['team_id']}/edit" Edit! 
-            form action="admin/teams/#{team['team_id']}/delete" method="post" 
+            form action="teams/#{team['team_id']}/delete" method="post" 
                 input type="submit" value="Delete Team"

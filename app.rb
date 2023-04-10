@@ -42,7 +42,7 @@ post '/catch' do
 end
 
 get '/inventory' do
-    @pokemons, @relation_data = fetch_inventory(session[:current_user])
+    @pokemons, @relation_data = fetch_inventory(session[:current_user][:user_id])
     slim(:"inventory/index")
 end
 
@@ -82,6 +82,15 @@ post '/admin/teams/:id/update' do
     redirect('/admin/teams')
 end
 
+post '/admin/teams/:id/delete' do
+    if admin_check(session[:current_user][:user_id])
+        delete_team(params[:id])
+    else
+        flash[:notice] = "You dont have permission to do that"
+    end
+    redirect('/admin/teams')
+end
+
 get '/team/:id/edit' do
     @your_pokemons, @relation_data = fetch_inventory(session[:current_user][:user_id])
     @team_id = params[:id]
@@ -101,7 +110,7 @@ post '/team/:id/update' do
 end
 
 get '/team/new' do
-    @your_pokemons, @relation_data = fetch_inventory(session[:current_user])
+    @your_pokemons, @relation_data = fetch_inventory(session[:current_user][:user_id])
     slim(:"team/new")
 end
 
