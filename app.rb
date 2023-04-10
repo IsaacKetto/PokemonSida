@@ -5,13 +5,13 @@ require 'bcrypt'
 require 'slim'
 require 'execjs'
 require 'sinatra/flash'
-require_relative 'lib/module'
+require_relative 'lib/model'
 
 enable :sessions
 $js_functions = ExecJS.compile(File.read('public/js/main.js'))
 $db = SQLite3::Database.new('db/database.db')
 $db.results_as_hash = true
-guest_routes = ["/", "/login", "/signup", "/pokemon", "/showcase"] 
+guest_routes = ["/", "/login", "/signup", "/pokemon", "/showcase", "/pokemon/type"] 
 admin_routes = ["/admin/users", "/admin/teams"]
 
 before do
@@ -21,7 +21,6 @@ before do
     end
 
     if admin_routes.include?(request.path_info) && !admin_check(session[:current_user][:user_id])
-        p admin_check(session[:current_user][:user_id])
         flash[:notice] = "You have no permission to enter that side"
         redirect('/')
     end
@@ -67,7 +66,8 @@ end
 
 get '/admin/teams/:id/edit' do
     if admin_check(session[:current_user][:user_id])
-        @your_pokemons, @relation_data = fetch_inventory(params[:id])
+        user_id = $db.execute('SELECT user_id FROM user_team_relation WHERE team_id=?', params[:id]).first["user_id"]
+        @your_pokemons, @relation_data = fetch_inventory(user_id)
         @team_id = params[:id]
         slim(:"admin/teams/edit")
     end   
@@ -99,6 +99,7 @@ end
 
 get '/showcase' do
     @teams = $db.execute('SELECT * FROM user_team_relation')
+    p session[:current_user]
     slim(:showcase)
 end
 

@@ -18,5 +18,5 @@ div.list_grid
                         - pokemon_name = special_name(pokemon["name"])
                         h3 = pokemon["name"]
                         img.img_size src='https://img.pokemondb.net/sprites/sword-shield/icon/#{pokemon_name.downcase}.png'
-            - if team["user_id"] == session[:current_user][:user_id]
+            - if session[:current_user] != nil && team["user_id"] == session[:current_user][:user_id]
                 a.button href="admin/teams/#{team['team_id']}/edit" Edit! 
