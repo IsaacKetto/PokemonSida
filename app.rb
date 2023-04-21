@@ -3,12 +3,11 @@ require 'sinatra/reloader'
 require 'SQLite3'
 require 'bcrypt'
 require 'slim'
-require 'execjs'
+require 'json'
 require 'sinatra/flash'
 require_relative 'lib/model'
 
 enable :sessions
-$js_functions = ExecJS.compile(File.read('public/js/main.js'))
 $db = SQLite3::Database.new('db/database.db')
 $db.results_as_hash = true
 guest_routes = ["/", "/login", "/signup", "/pokemon", "/showcase", "/pokemon/type"] 
@@ -75,8 +74,7 @@ end
 
 post '/admin/teams/:id/update' do
     if admin_check(session[:current_user][:user_id])
-        fixed_array = $js_functions.call("fixArray", params[:pokemons])
-        selected_pokemons = $js_functions.call("addQuotesToArray", fixed_array)
+        selected_pokemons = JSON.generate(params[:pokemons].map { |value| JSON.parse(value) })
         update_team(params["team_name"], selected_pokemons, params[:id])
     end
     redirect('/admin/teams')
@@ -104,8 +102,7 @@ get '/showcase' do
 end
 
 post '/team/:id/update' do
-    fixed_array = $js_functions.call("fixArray", params[:pokemons])
-    selected_pokemons = $js_functions.call("addQuotesToArray", fixed_array)
+    selected_pokemons = JSON.generate(params[:pokemons].map { |value| JSON.parse(value) })
     update_team(params["team_name"], selected_pokemons, params[:id])
     redirect("/team")
 end
@@ -116,7 +113,7 @@ get '/team/new' do
 end
 
 get '/pokemon' do
-    @pokemons = $db.execute('SELECT * FROM pokemons')
+    @pokemons = fetch_pokemons()
     slim(:"pokemon/index")
 end
 
@@ -134,7 +131,9 @@ get '/login' do
 end
 
 get '/logout' do
-    logout()
+    session.delete(:current_user)
+    session[:logged_in] = false
+    flash[:notice] = "You have been logged out!"
     redirect('/')
 end
 
@@ -152,6 +151,10 @@ post '/admin/users/:id/delete' do
 
     if !admin_check(params[:id]) && admin_check(session[:current_user][:user_id])
         delete_user(params[:id])
+        if user_id == session[:current_user][:user_id]
+            session[:logged_in] = false
+            session[:current_user] = {}
+        end
     end
 
     redirect(:"admin/users")
@@ -162,12 +165,15 @@ post '/delete_user' do
         flash[:notice] = "You cannot delete the Admin user"
     else
         delete_user(session[:current_user][:user_id])
+        if user_id == session[:current_user][:user_id]
+            session[:logged_in] = false
+            session[:current_user] = {}
+        end
     end
 end
 
 post '/team' do
-    fixed_array = $js_functions.call("fixArray", params[:pokemons])
-    selected_pokemons = $js_functions.call("addQuotesToArray", fixed_array)
+    selected_pokemons = JSON.generate(params[:pokemons].map { |value| JSON.parse(value) })
     create_team(selected_pokemons, params["team_name"])
     redirect(:"/team")
 end
@@ -188,10 +194,16 @@ end
 post '/login' do
     username = params[:username]
     password = params[:password]
-    row = $db.execute("SELECT password FROM users WHERE username=?", username).first
+    row = fetch_row(username)
     password_digest = row["password"]
-    if BCrypt::Password.new(password_digest) == password
-        login(username)
+    crypted_password = crypt_password(password_digest)
+    if crypted_password == password
+        flash[:notice] = "Successful login"
+        session[:logged_in] = true
+        session[:current_user] = {
+            username: username, 
+            user_id: fetch_user_id(username)
+        }
         redirect('/')
     else 
         flash[:notice] = "Incorrect password or username!"
@@ -206,11 +218,8 @@ post '/pokemon/:id/delete' do
 end
 
 post '/pokemon/type' do
-    if params["type"] == "all"
-        @pokemons = $db.execute('SELECT * FROM pokemons')
-    else
-        @pokemons = $db.execute('SELECT * FROM pokemons WHERE type_1=? OR type_2=?', params["type"].capitalize, params["type"].capitalize)
-    end
+    type = params["type"]
+    type_fetch(type)
     @filter = params["type"]
     slim(:"pokemon/index")
 end

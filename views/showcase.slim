@@ -11,7 +11,7 @@ div.list_grid
             - team_user = $db.execute('SELECT username FROM users INNER JOIN user_team_relation ON users.user_id = user_team_relation.user_id AND user_team_relation.team_id=?', team["team_id"]).first["username"]
             h2.team_header User: #{team_user}
             - pokemons = team["pokemons"]
-            - pokemon_list = $js_functions.call("removeQuotesFromArray", pokemons)
+            - pokemon_list = JSON.parse(pokemons)
             div.flex_row
                 - pokemon_list.each do |pokemon|
                     div

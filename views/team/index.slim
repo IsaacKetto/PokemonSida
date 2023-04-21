@@ -6,7 +6,7 @@ div.list_grid
             - team_name = team["team_name"]
             h1.team_header = team_name 
             - pokemons = team["pokemons"]
-            - pokemon_list = $js_functions.call("removeQuotesFromArray", pokemons)
+            - pokemon_list = JSON.parse(pokemons)
             div.flex_row
                 - pokemon_list.each do |pokemon|
                     div

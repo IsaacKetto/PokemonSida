@@ -13,37 +13,46 @@ def special_name(name)
     return pokemon_name
 end
 
-def catch_pokemon(user_id, pokemon_id)
-    $db.execute('INSERT INTO user_pokemon_relation (user_id, pokemon_id) VALUES (?, ?)', user_id, pokemon_id)
+def fetch_pokemons()
+    return $db.execute('SELECT * FROM pokemons')
 end
 
-def logout()
-    session.delete(:current_user)
-    session[:logged_in] = false
-    flash[:notice] = "You have been logged out!"
+def catch_pokemon(user_id, pokemon_id)
+    $db.execute('INSERT INTO user_pokemon_relation (user_id, pokemon_id) VALUES (?, ?)', user_id, pokemon_id)
 end
 
 def delete_user(user_id)
     $db.execute('DELETE FROM users WHERE user_id=?', user_id)
     $db.execute('DELETE FROM user_pokemon_relation WHERE user_id=?', user_id)
     $db.execute('DELETE FROM user_team_relation WHERE user_id=?', user_id)
-    if user_id == session[:current_user][:user_id]
-        session[:logged_in] = false
-        session[:current_user] = {}
-    end
 end
 
 def update_user(new_name, id)
     $db.execute("UPDATE users SET username=? WHERE user_id=?", new_name, id)
 end
 
+def crypt_password(password_digest)
+    return BCrypt::Password.new(password_digest)
+end
+
 def login(username)
-    flash[:notice] = "Successful login"
-    session[:logged_in] = true
-    session[:current_user] = {
-        username: username, 
-        user_id: $db.execute('SELECT user_id FROM users WHERE username=? LIMIT 1', username).first["user_id"]
-    }
+end
+
+def type_fetch(type)
+    if type == "all"
+        pokemons = $db.execute('SELECT * FROM pokemons')
+    else
+        pokemons = $db.execute('SELECT * FROM pokemons WHERE type_1=? OR type_2=?', type.capitalize, type.capitalize)
+    end
+    return pokemons
+end
+
+def fetch_row(username)
+    return $db.execute("SELECT password FROM users WHERE username=?", username).first
+end
+
+def fetch_user_id(username)
+    return $db.execute('SELECT user_id FROM users WHERE username=? LIMIT 1', username).first["user_id"]
 end
 
 def create_team(pokemons, team_name)
