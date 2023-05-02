@@ -18,6 +18,7 @@
 .team_header{
     color: white;
     text-align: center;
+    word-break: break-all;
     align-content: center;
 }
 

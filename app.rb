@@ -5,17 +5,17 @@ require 'bcrypt'
 require 'slim'
 require 'json'
 require 'sinatra/flash'
-require_relative 'lib/model'
+require 'yardoc'
+require 'yard-sinatra'
+Dir[File.dirname(__FILE__) + '/lib/*.rb'].each {|file| require file }
 
 enable :sessions
-$db = SQLite3::Database.new('db/database.db')
-$db.results_as_hash = true
 guest_routes = ["/", "/login", "/signup", "/pokemon", "/showcase", "/pokemon/type"] 
 admin_routes = ["/admin/users", "/admin/teams"]
 
 before do
     @type_colors = TypeColours
-    if session[:logged_in] != true && !guest_routes.include?(request.path_info) && !request.path_info.match?(/^\/pokemon\/\d+$/)
+    if session[:logged_in] != true && !guest_routes.include?(request.path_info) && !request.path_info.match?(/^\/pokemon\/\d+$/) && !request.path_info.match?(/^\/pokemon\/type\/\w+$/)
         redirect('/')
     end
 
@@ -25,10 +25,11 @@ before do
     end
 end
 
+# Displays 
 get '/' do
-    if logged_in?()
+    if session[:logged_in] == true
         random_number = rand(1..151)
-        @pokemon = $db.execute('SELECT * FROM pokemons WHERE id=?', random_number).first
+        @pokemon = fetch_pokemons(random_number)
         session[:pokemon] = @pokemon
     end
     slim(:index)
@@ -51,33 +52,40 @@ end
 
 get '/admin/users' do
     if admin_check(session[:current_user][:user_id])
-        @users = $db.execute('SELECT * FROM users')
+        @users = all_users()
         slim(:"admin/users/index")
     end
 end
 
 get '/admin/teams' do
     if admin_check(session[:current_user][:user_id])
-        @teams = $db.execute('SELECT * FROM user_team_relation')
+        @teams = all_teams()
         slim(:"admin/teams/index")
     end
 end
 
 get '/admin/teams/:id/edit' do
     if admin_check(session[:current_user][:user_id])
-        user_id = $db.execute('SELECT user_id FROM user_team_relation WHERE team_id=?', params[:id]).first["user_id"]
-        @your_pokemons, @relation_data = fetch_inventory(user_id)
         @team_id = params[:id]
+        user_id = fetch_user_id_from_team(@team_id)
+        @your_pokemons, @relation_data = fetch_inventory(user_id)
         slim(:"admin/teams/edit")
-    end   
+    else
+       flash[:notice] = "You do not have permission to enter this route"
+       redirect('/')
+    end
 end
 
 post '/admin/teams/:id/update' do
-    if admin_check(session[:current_user][:user_id])
-        selected_pokemons = JSON.generate(params[:pokemons].map { |value| JSON.parse(value) })
-        update_team(params["team_name"], selected_pokemons, params[:id])
+    if params[:pokemons] != nil
+        if admin_check(session[:current_user][:user_id])
+            selected_pokemons = JSON.generate(params[:pokemons].map { |value| JSON.parse(value) })
+            update_team(params["team_name"], selected_pokemons, params[:id])
+            redirect('/admin/teams')
+        end
     end
-    redirect('/admin/teams')
+    flash[:notice] = "Team name was not a string or you didnt select any pokemons"
+    redirect(back)
 end
 
 post '/admin/teams/:id/delete' do
@@ -96,15 +104,22 @@ get '/team/:id/edit' do
 end
 
 get '/showcase' do
-    @teams = $db.execute('SELECT * FROM user_team_relation')
-    p session[:current_user]
+    @teams = all_teams()
     slim(:showcase)
 end
 
 post '/team/:id/update' do
-    selected_pokemons = JSON.generate(params[:pokemons].map { |value| JSON.parse(value) })
-    update_team(params["team_name"], selected_pokemons, params[:id])
-    redirect("/team")
+    if params[:pokemons] != nil
+        if correct_user_team?(session[:current_user][:user_id], params[:id])
+            selected_pokemons = JSON.generate(params[:pokemons].map { |value| JSON.parse(value) })
+            update_team(params["team_name"], selected_pokemons, params[:id])
+            redirect("/team")
+        end
+        flash[:notice] = "You do not have permission to edit the user's team"
+        redirect('/')
+    end
+    flash[:notice] = "You need to select pokemons"
+    redirect(back)
 end
 
 get '/team/new' do
@@ -113,8 +128,20 @@ get '/team/new' do
 end
 
 get '/pokemon' do
-    @pokemons = fetch_pokemons()
+    @pokemons = fetch_pokemons(nil)
     slim(:"pokemon/index")
+end    
+
+get '/pokemon/type/:type' do |type|
+
+    if type == "all"
+        redirect('/pokemon')
+    end
+
+    @pokemons = type_fetch(type)
+    @filter = type
+    
+    slim(:'pokemon/index')
 end
 
 get '/pokemon/:id' do
@@ -160,66 +187,76 @@ post '/admin/users/:id/delete' do
     redirect(:"admin/users")
 end
 
-post '/delete_user' do
-    if admin_check(session[:current_user][:user_id])
-        flash[:notice] = "You cannot delete the Admin user"
-    else
-        delete_user(session[:current_user][:user_id])
-        if user_id == session[:current_user][:user_id]
-            session[:logged_in] = false
-            session[:current_user] = {}
-        end
-    end
-end
-
 post '/team' do
-    selected_pokemons = JSON.generate(params[:pokemons].map { |value| JSON.parse(value) })
-    create_team(selected_pokemons, params["team_name"])
-    redirect(:"/team")
+    if params[:pokemons] == nil || params["team_name"] == ""
+        flash[:notice] = "You didnt select pokemons or didnt add a team name"
+        redirect(back)
+    elsif params[:pokemons] != nil || params["team_name"] != ""
+        selected_pokemons = JSON.generate(params[:pokemons].map { |value| JSON.parse(value) })
+        create_team(selected_pokemons, session[:current_user][:user_id], params["team_name"])
+        redirect(:"/team")
+    end
 end
 
 post '/signup' do
   username = params[:username]
   password = params[:password]
   password_repeat = params[:password_repeat]
-  if password == password_repeat
-    signup(username, password)
-    redirect '/login'
+  if password.length < 5
+    flash[:notice] = "Password is too short"
   else
-    flash[:notice] = "Incorrect password in password repeat or password"
-    redirect '/signup'
+    if password == password_repeat
+        signup(username, password)
+        redirect '/login'
+    else
+        flash[:notice] = "Incorrect password in password repeat or password"
+        redirect '/signup'
+    end
   end
 end
 
+login_attemps = {}
 post '/login' do
     username = params[:username]
     password = params[:password]
     row = fetch_row(username)
-    password_digest = row["password"]
-    crypted_password = crypt_password(password_digest)
-    if crypted_password == password
-        flash[:notice] = "Successful login"
-        session[:logged_in] = true
-        session[:current_user] = {
-            username: username, 
-            user_id: fetch_user_id(username)
-        }
-        redirect('/')
-    else 
-        flash[:notice] = "Incorrect password or username!"
-        redirect('/login')
+    if user_exists?(username)
+        password_digest = row["password"]
+        crypted_password = crypt_password(password_digest)
+        if crypted_password == password
+            flash[:notice] = "Successful login"
+            session[:logged_in] = true
+            session[:current_user] = {
+                username: username, 
+                user_id: fetch_user_id(username)
+            }
+            redirect('/')
+        end
     end
+
+    if login_attemps[request.ip] && (Time.now.to_i - login_attemps[request.ip].last) < 2
+        flash[:notice] = "Too many login attemps! Please try again later."
+        redirect('/login')
+    else
+        login_attemps[request.ip] ||= []
+        login_attemps[request.ip].append(Time.now.to_i) 
+    end
+
+    flash[:notice] = "Incorrect password or username!"
+    redirect('/login')
 end
 
 # fix secured delete
 post '/pokemon/:id/delete' do
-    $db.execute('DELETE FROM user_pokemon_relation WHERE id=?', params[:id])
-    redirect('/inventory')
+    if correct_user_inventory?(session[:current_user][:user_id], params[:id])
+        delete_pokemon_from_inv(params[:id])
+        redirect('/inventory')
+    end
+    flash[:notice] = "You do not have permission to delete this user's pokemon"
+    redirect('/')
 end
 
 post '/pokemon/type' do
     type = params["type"]
-    type_fetch(type)
-    @filter = params["type"]
-    slim(:"pokemon/index")
+    redirect("/pokemon/type/#{type}")
 end
